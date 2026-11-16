@@ -12,7 +12,8 @@ Made for my friend **[AutismPossum](https://www.twitch.tv/autismpossum_)**, who 
 - Custom username and message colors.
 - Option to use each user's default Twitch username color.
 - Twitch badge support, with optional single-color badges.
-- Twitch emote rendering.
+- Full emote support: Twitch, 7TV, BetterTTV (BTTV), and FrankerFaceZ (FFZ).
+- Smooth auto-scrolling to newest messages.
 - Special formatting for system users (e.g. StreamElements and Nightbot).
 - Optional username icons and system information icons.
 - Configurable text, badge, and emote sizes.
@@ -26,6 +27,7 @@ Made for my friend **[AutismPossum](https://www.twitch.tv/autismpossum_)**, who 
 - JavaScript
 - [UnoCSS Runtime](https://unocss.dev/)
 - [Lucide Icons](https://lucide.dev/)
+- [7TV API](https://7tv.app/)
 - [StreamElements Custom Widgets](https://streamelements.com/)
 
 ## Installation
@@ -35,6 +37,7 @@ Made for my friend **[AutismPossum](https://www.twitch.tv/autismpossum_)**, who 
 3. Add a **Custom Widget**.
 4. Copy the project files into their respective sections:
    - `index.html` → HTML
+   - `style.css` → CSS
    - `script.js` → JS
    - `fields.js` → Fields
 5. Save your widget and add it to your overlay.

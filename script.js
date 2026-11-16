@@ -28,7 +28,38 @@ let CONFIG = {
     sysUserIcon: true
 };
 
-// Helper to turn "user1, user2" into ["user1", "user2"]
+/* =========================================================
+   7TV EMOTES LOADER
+========================================================= */
+
+const sevenTVEmotes = {};
+
+async function load7TV(channelName, twitchId) {
+    try {
+        const globalRes = await fetch("https://api.7tv.app/v3/emote-sets/global");
+        const globalData = await globalRes.json();
+        globalData.emotes?.forEach(e => {
+            sevenTVEmotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/2x.webp`;
+        });
+
+        if (!twitchId && channelName) {
+            const seRes = await fetch(`https://api.streamelements.com/kappa/v2/channels/${channelName}`);
+            const seData = await seRes.json();
+            twitchId = seData.providerId;
+        }
+
+        if (twitchId) {
+            const userRes = await fetch(`https://api.7tv.app/v3/users/twitch/${twitchId}`);
+            const userData = await userRes.json();
+            userData.emote_set?.emotes?.forEach(e => {
+                sevenTVEmotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/2x.webp`;
+            });
+        }
+    } catch (err) {
+        console.error("7TV load error:", err);
+    }
+}
+
 function parseUserList(text) {
     return String(text || "")
         .split(",")
@@ -36,8 +67,10 @@ function parseUserList(text) {
         .filter(Boolean);
 }
 
-// Load settings from the StreamElements FIELDS tab
 window.addEventListener("onWidgetLoad", (obj) => {
+    const channelName = obj.detail?.channel?.username;
+    load7TV(channelName);
+
     const fields = obj.detail.fieldData;
     if (!fields) return;
 
@@ -92,6 +125,11 @@ window.addEventListener("onEventReceived", (obj) => {
 
     const data = event.data;
     if (CONFIG.hideCommands && data.text.startsWith("!")) return;
+
+    // Load channel 7TV emotes if not loaded yet (uses Twitch channel ID from message)
+    if (data.tags?.["room-id"] && Object.keys(sevenTVEmotes).length <= 1) {
+        load7TV(null, data.tags["room-id"]);
+    }
 
     createMessage(data);
 });
@@ -210,30 +248,25 @@ function createMessage(data) {
 
 function renderEmotes(data) {
     const fragment = document.createDocumentFragment();
-    const text = data.text || "";
+    const words = (data.text || "").split(" ");
     const emotes = data.emotes || [];
 
-    let lastIndex = 0;
+    for (const word of words) {
+        const seEmote = emotes.find(e => e.name === word);
+        const emoteUrl = seEmote
+            ? (seEmote.urls[4] || seEmote.urls[2] || seEmote.urls[1])
+            : sevenTVEmotes[word];
 
-    for (const emote of emotes) {
-        const start = Number(emote.start);
-        const end = Number(emote.end);
-
-        if (start > lastIndex) {
-            fragment.append(text.slice(lastIndex, start));
+        if (emoteUrl) {
+            const img = document.createElement("img");
+            img.src = emoteUrl;
+            img.className = "inline-block align-middle mx-0.5";
+            img.style.height = `${CONFIG.emoteSize}px`;
+            fragment.append(img, " ");
+        } else {
+            // Just normal text
+            fragment.append(word + " ");
         }
-
-        const img = document.createElement("img");
-        img.src = emote.urls[4] || emote.urls[1];
-        img.className = "inline-block align-middle mx-0.5";
-        img.style.height = `${CONFIG.emoteSize}px`;
-        fragment.append(img);
-
-        lastIndex = end + 1;
-    }
-
-    if (lastIndex < text.length) {
-        fragment.append(text.slice(lastIndex));
     }
 
     return fragment;
